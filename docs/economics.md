@@ -65,6 +65,9 @@ Stated so that the numbers are not mistaken for something more complete than the
   capital cost at any realistic node size. Revisit if hardware work makes it material.
 - **The exchange rate.** All figures are in satoshis. Foundry does not convert to fiat and
   does not model bitcoin's price. A channel that earned sats earned sats.
+- **Payments that are not routing.** Donations the node receives and payments it makes for its
+  own purposes are not forwards, so they are neither routing revenue nor rebalance cost. They
+  still move liquidity, and Foundry's liquidity reasoning has to expect them.
 
 ## A worked example
 

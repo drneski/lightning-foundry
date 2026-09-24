@@ -40,7 +40,8 @@ schedule. It is not a gate on M1.*
 A minimal, verifiable, installable node that **observes and touches nothing**.
 
 - Bitcoin Core and LND, with versions and hashes published and verified at install
-- Foundry Core emitting real events against the M1 contract
+- Foundry Core emitting real events against the M1 contract, and publishing the public ones
+  when the operator opts in
 - Lightning Jet integrated and operator-driven
 - Deterministic dependency and policy validation
 - A small local interface
@@ -118,7 +119,8 @@ These do not gate the spine and do not wait for it.
 OBL is Foundry's reference deployment and its front door. The OBL node becomes a real
 Foundry-operated node with real economic activity, which gives Foundry a live system to
 operate rather than a synthetic demo. The Lightning Factory cave turns the public event
-stream into something a person can watch and understand.
+stream into something a person can watch and understand. OBL's proof of concept, mapped onto
+these milestones, is in [`integrations/obl-payments-poc.md`](integrations/obl-payments-poc.md).
 
 The loop that matters: someone meets Lightning through a game, watches a gorilla build a
 channel, learns why a rebalance happened, finds Foundry, contributes, runs a node — and may

@@ -257,5 +257,6 @@ change that breaks consumers silently. Prefer a new type.
 ## What is not here yet
 
 Fee policy changes, HTLC-level detail, peer scoring, on-chain sweeps, watchtower activity,
-and anything about channel *opening decisions* as opposed to channel opening *facts*. Each
+payments the node receives or makes for its own purposes, such as donations and payouts, and
+anything about channel *opening decisions* as opposed to channel opening *facts*. Each
 arrives when something real produces it.

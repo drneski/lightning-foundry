@@ -277,9 +277,9 @@ what its operator chose to publish, with real relationships between nodes drawn 
 cabling. That raises the stakes on everything above: a multi-node public feed multiplies every
 leak, and the questions in this document want settling before a second node appears.
 
-## Not yet written
+## Related
 
-- `obl-payments-poc.md` — the OBL payments and Lightning Factory proof of concept, mapped onto
-  the milestones.
-- `../lightning-factory.md` — the consumer's side of the contract: what the Factory must do
-  with the stream it receives.
+- [`obl-payments-poc.md`](obl-payments-poc.md) — OBL's payments and Lightning Factory proof of
+  concept, mapped onto the milestones.
+- `../lightning-factory.md`, not yet written — the consumer's side of the contract: what the
+  Factory must do with the stream it receives.

@@ -111,7 +111,7 @@ Foundry is a management layer on top of them.
 - **The Lightning protocol.** LND implements it. Foundry never will.
 - **Payment processing.** Donations, invoicing and merchant flows are a separate concern with
   a separate stack. BTCPay Server lives on Ooga Booga Land's payments side and is not a Foundry
-  dependency — see [`integrations/oogabooga.md`](integrations/oogabooga.md).
+  dependency — see [`integrations/obl-payments-poc.md`](integrations/obl-payments-poc.md).
 - **Any cloud component.** There is no server half of this product.
 - **Visualization.** Foundry emits events; consumers draw pictures.
 
