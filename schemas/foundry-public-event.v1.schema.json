@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lightning-foundry.org/schemas/foundry-public-event.v1.schema.json",
+  "title": "Foundry Public Event v1",
+  "description": "The only event shape Foundry publishes outside the operator's machine, and the only one a visualization consumer such as the Lightning Factory receives. It is deliberately a different schema from the internal event rather than a redacted copy of it: there is no field here that can carry a channel id, a pubkey, a channel point, or a balance, so a forgotten redaction cannot leak one. `additionalProperties` is false at every level for the same reason.",
+  "type": "object",
+  "required": ["schema", "id", "seq", "bucket", "node", "origin", "stream", "type"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "foundry.public.event.v1" },
+    "id": {
+      "description": "A random UUIDv4, generated fresh for the public event. NOT a ULID or UUIDv7, which are correct for the internal stream but embed a millisecond timestamp in their leading bits and would publish the exact event time beside a bucket field pretending to hide it. NOT the internal event's id, which would link the public and internal streams.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "seq": {
+      "description": "Monotonic per node for the public stream, assigned by the export and independent of the internal seq. Consumers order by seq, never by bucket: buckets are coarse, and rebalance buckets are hourly, so a later event can carry an earlier bucket.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "bucket": {
+      "description": "Coarse time bucket, RFC 3339 UTC, floored to the publication granularity (default one minute; always one hour for rebalance events). Not the event's real timestamp: precise timing plus channel state is what makes a public feed useful to an attacker.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "node": {
+      "description": "Operator-chosen pseudonym. Never a Lightning pubkey.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,30}[a-z0-9]$"
+    },
+    "origin": { "enum": ["observed", "derived"] },
+    "stream": { "enum": ["live", "replay"] },
+    "type": {
+      "description": "A deliberate subset of the internal vocabulary. Liquidity events are absent entirely: publishing that a channel is depleted, and in which direction, tells a jamming adversary where to strike and a competitor how to price against you. Rebalance events are published, but never attributed to a line and never timed more finely than the hour, because a rebalance happens precisely when a channel was low; see the constraint below and docs/integrations/oogabooga.md.",
+      "enum": [
+        "node.started", "node.ready", "node.stopped",
+        "peer.count.changed",
+        "channel.opening", "channel.active", "channel.closing", "channel.closed",
+        "forward.settled", "forward.failed",
+        "rebalance.succeeded", "rebalance.failed",
+        "activity.summary"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scale": {
+          "description": "Power-of-ten magnitude in sats instead of an exact amount: dust under 10,000; small 10,000 to 99,999; medium 100,000 to 999,999; large 1,000,000 to 9,999,999; very_large 10,000,000 and up. Measures whatever the event is about: a forward's amount, a channel's capacity, a rebalance's size.",
+          "enum": ["dust", "small", "medium", "large", "very_large"]
+        },
+        "count": {
+          "description": "How many of this event occurred in the bucket. Aggregation is what makes the feed safe to publish and animate.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "success_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "peer_count": { "type": "integer", "minimum": 0 },
+        "channel_count": { "type": "integer", "minimum": 0 },
+        "slot": {
+          "description": "An opaque per-node label so a consumer can animate the same machine consistently within a day. Reassigned every 24 hours at 00:00 UTC and carrying no relationship to any channel id. It is NOT a stable identifier and MUST NOT be treated as one.",
+          "type": "string",
+          "pattern": "^[a-z0-9]{1,8}$"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Rebalance events are the one place the public feed touches liquidity. A rebalance happens because a channel was depleted, so naming the line would name the depleted channel, precise timing would confirm to a jamming adversary that their attack worked, and a success rate would summarize how often the node failed to find liquidity. All three are therefore impossible to express: no slot, no success_ratio, and an hourly bucket. Holding each hour's rebalances until the hour closes is the export's job; no schema can express emission order.",
+      "if": { "properties": { "type": { "enum": ["rebalance.succeeded", "rebalance.failed"] } } },
+      "then": {
+        "properties": {
+          "bucket": { "pattern": "T[0-9]{2}:00:00(\\.0+)?Z$" },
+          "payload": { "not": { "anyOf": [{ "required": ["slot"] }, { "required": ["success_ratio"] }] } }
+        }
+      }
+    }
+  ]
+}

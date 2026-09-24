@@ -1,0 +1,261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lightning-foundry.org/schemas/foundry-event.v1.schema.json",
+  "title": "Foundry Event v1 (internal)",
+  "description": "The internal event contract emitted by a Foundry node. These events may carry channel and peer identifiers and liquidity state, and MUST NOT be published outside the operator's machine. The public feed uses foundry-public-event.v1.schema.json, which is structurally incapable of carrying identity or balance.",
+  "type": "object",
+  "required": ["schema", "id", "seq", "time", "emitted", "node", "source", "origin", "stream", "type", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "foundry.event.v1"
+    },
+    "id": {
+      "description": "Globally unique, lexicographically sortable. UUIDv7 or ULID. Never a counter: counters collide across restarts and sources, and leak volume.",
+      "type": "string",
+      "pattern": "^([0-9A-HJKMNP-TV-Z]{26}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$"
+    },
+    "seq": {
+      "description": "Monotonic per node, assigned by the event store when it records the event, starting at 1 and never reused. Lets a consumer order a replay and detect gaps; a gap means an event was filtered out or missed.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "time": {
+      "description": "When the thing happened, RFC 3339 UTC. For observed events this is the node's or chain's timestamp, not Foundry's clock.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "emitted": {
+      "description": "When Foundry emitted the event, RFC 3339 UTC. Differs from `time` on replay, backfill, or when Foundry derives an event about the past.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "node": {
+      "description": "Operator-chosen pseudonym for the node. Never a Lightning pubkey. Stable across restarts.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,30}[a-z0-9]$"
+    },
+    "source": {
+      "description": "What produced the event. `lnd` and `chain` are observed; `simulation` is synthetic; `foundry` is Foundry's own reasoning or actions.",
+      "enum": ["lnd", "chain", "foundry", "simulation"]
+    },
+    "origin": {
+      "description": "Whether this event reports a fact or an inference. `observed` means it came from LND or the chain and Foundry did not invent it. `derived` means Foundry computed, estimated or assumed it. Consumers MUST NOT present derived values as node facts.",
+      "enum": ["observed", "derived"]
+    },
+    "stream": {
+      "description": "`live` for events emitted as they occur; `replay` when re-emitting a stored stream. A visualization consumer needs to know which it is.",
+      "enum": ["live", "replay"]
+    },
+    "type": {
+      "enum": [
+        "node.started", "node.ready", "node.stopped",
+        "peer.connected", "peer.disconnected",
+        "channel.opening", "channel.active", "channel.closing", "channel.closed",
+        "forward.settled", "forward.failed",
+        "liquidity.low", "liquidity.recovered",
+        "rebalance.started", "rebalance.succeeded", "rebalance.failed",
+        "economics.snapshot"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    { "if": { "properties": { "type": { "const": "node.started" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/nodeLifecycle" } } } },
+    { "if": { "properties": { "type": { "const": "node.ready" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/nodeLifecycle" } } } },
+    { "if": { "properties": { "type": { "const": "node.stopped" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/nodeLifecycle" } } } },
+    { "if": { "properties": { "type": { "const": "peer.connected" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/peer" } } } },
+    { "if": { "properties": { "type": { "const": "peer.disconnected" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/peer" } } } },
+    { "if": { "properties": { "type": { "const": "channel.opening" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/channelOpening" } } } },
+    { "if": { "properties": { "type": { "const": "channel.active" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/channel" } } } },
+    { "if": { "properties": { "type": { "const": "channel.closing" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/channelClosing" } } } },
+    { "if": { "properties": { "type": { "const": "channel.closed" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/channelClosed" } } } },
+    { "if": { "properties": { "type": { "const": "forward.settled" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/forwardSettled" } } } },
+    { "if": { "properties": { "type": { "const": "forward.failed" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/forwardFailed" } } } },
+    { "if": { "properties": { "type": { "const": "liquidity.low" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/liquidity" } } } },
+    { "if": { "properties": { "type": { "const": "liquidity.recovered" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/liquidity" } } } },
+    { "if": { "properties": { "type": { "const": "rebalance.started" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/rebalanceStarted" } } } },
+    { "if": { "properties": { "type": { "const": "rebalance.succeeded" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/rebalanceSucceeded" } } } },
+    { "if": { "properties": { "type": { "const": "rebalance.failed" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/rebalanceFailed" } } } },
+    { "if": { "properties": { "type": { "const": "economics.snapshot" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/economicsSnapshot" } } } }
+  ],
+  "$defs": {
+    "channelId": {
+      "description": "LND short channel id as a decimal string. uint64 exceeds JSON's safe integer range, so it is carried as a string.",
+      "type": "string",
+      "pattern": "^[0-9]{1,20}$"
+    },
+    "pubkey": {
+      "description": "Compressed secp256k1 public key, 33 bytes hex. Internal only.",
+      "type": "string",
+      "pattern": "^0[23][0-9a-f]{64}$"
+    },
+    "msat": { "type": "integer", "minimum": 0 },
+    "sat": { "type": "integer", "minimum": 0 },
+
+    "nodeLifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lnd_version": { "type": "string" },
+        "chain": { "enum": ["mainnet", "testnet", "signet", "regtest", "simnet"] },
+        "block_height": { "type": "integer", "minimum": 0 },
+        "reason": { "type": "string" }
+      }
+    },
+    "peer": {
+      "type": "object",
+      "required": ["peer_pubkey"],
+      "additionalProperties": false,
+      "properties": {
+        "peer_pubkey": { "$ref": "#/$defs/pubkey" },
+        "address": { "type": "string" },
+        "inbound": { "type": "boolean" }
+      }
+    },
+    "channelOpening": {
+      "type": "object",
+      "required": ["channel_point", "capacity_sat"],
+      "additionalProperties": false,
+      "properties": {
+        "channel_point": { "type": "string", "pattern": "^[0-9a-f]{64}:[0-9]{1,5}$" },
+        "peer_pubkey": { "$ref": "#/$defs/pubkey" },
+        "capacity_sat": { "$ref": "#/$defs/sat" },
+        "initiator": { "enum": ["local", "remote"] },
+        "open_fee_sat": { "$ref": "#/$defs/sat" }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "required": ["channel_id"],
+      "additionalProperties": false,
+      "properties": {
+        "channel_id": { "$ref": "#/$defs/channelId" },
+        "peer_pubkey": { "$ref": "#/$defs/pubkey" },
+        "capacity_sat": { "$ref": "#/$defs/sat" },
+        "private": { "type": "boolean" }
+      }
+    },
+    "channelClosing": {
+      "type": "object",
+      "required": ["channel_id"],
+      "additionalProperties": false,
+      "properties": {
+        "channel_id": { "$ref": "#/$defs/channelId" },
+        "close_type": { "enum": ["cooperative", "local_force", "remote_force", "breach", "funding_canceled", "abandoned"] },
+        "initiator": { "enum": ["local", "remote"] }
+      }
+    },
+    "channelClosed": {
+      "type": "object",
+      "required": ["channel_id", "close_type"],
+      "additionalProperties": false,
+      "properties": {
+        "channel_id": { "$ref": "#/$defs/channelId" },
+        "close_type": { "enum": ["cooperative", "local_force", "remote_force", "breach", "funding_canceled", "abandoned"] },
+        "close_fee_sat": { "$ref": "#/$defs/sat" },
+        "settled_balance_sat": { "$ref": "#/$defs/sat" },
+        "lifetime_seconds": { "description": "Seconds from channel.opening to channel.closed.", "type": "integer", "minimum": 0 }
+      }
+    },
+    "forwardSettled": {
+      "type": "object",
+      "required": ["in_channel_id", "out_channel_id", "amount_msat", "fee_msat"],
+      "additionalProperties": false,
+      "properties": {
+        "in_channel_id": { "$ref": "#/$defs/channelId" },
+        "out_channel_id": { "$ref": "#/$defs/channelId" },
+        "amount_msat": { "$ref": "#/$defs/msat" },
+        "fee_msat": { "$ref": "#/$defs/msat" }
+      }
+    },
+    "forwardFailed": {
+      "type": "object",
+      "required": ["in_channel_id"],
+      "additionalProperties": false,
+      "properties": {
+        "in_channel_id": { "$ref": "#/$defs/channelId" },
+        "out_channel_id": { "$ref": "#/$defs/channelId" },
+        "amount_msat": { "$ref": "#/$defs/msat" },
+        "failure": {
+          "description": "Why it failed. `insufficient_liquidity` is the economically interesting case: demand arrived and we could not serve it.",
+          "enum": ["insufficient_liquidity", "fee_insufficient", "channel_disabled", "expiry", "link_failure", "downstream", "unknown"]
+        }
+      }
+    },
+    "liquidity": {
+      "description": "Always derived: LND emits no liquidity event. Foundry computes this from channel balances against an operator threshold.",
+      "type": "object",
+      "required": ["channel_id", "direction"],
+      "additionalProperties": false,
+      "properties": {
+        "channel_id": { "$ref": "#/$defs/channelId" },
+        "direction": { "enum": ["outbound", "inbound"] },
+        "local_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "threshold_ratio": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "rebalanceStarted": {
+      "type": "object",
+      "required": ["rebalance_id", "amount_msat"],
+      "additionalProperties": false,
+      "properties": {
+        "rebalance_id": { "type": "string" },
+        "from_channel_id": { "$ref": "#/$defs/channelId" },
+        "to_channel_id": { "$ref": "#/$defs/channelId" },
+        "amount_msat": { "$ref": "#/$defs/msat" },
+        "max_fee_msat": { "$ref": "#/$defs/msat" },
+        "trigger": { "enum": ["operator", "policy", "jet", "model"] }
+      }
+    },
+    "rebalanceSucceeded": {
+      "type": "object",
+      "required": ["rebalance_id", "amount_msat", "fee_msat"],
+      "additionalProperties": false,
+      "properties": {
+        "rebalance_id": { "type": "string" },
+        "amount_msat": { "$ref": "#/$defs/msat" },
+        "fee_msat": { "$ref": "#/$defs/msat" },
+        "attempts": { "type": "integer", "minimum": 1 },
+        "route_length": { "type": "integer", "minimum": 2 }
+      }
+    },
+    "rebalanceFailed": {
+      "type": "object",
+      "required": ["rebalance_id"],
+      "additionalProperties": false,
+      "properties": {
+        "rebalance_id": { "type": "string" },
+        "amount_msat": { "$ref": "#/$defs/msat" },
+        "fee_paid_msat": {
+          "description": "Failed attempts can still cost fees. Zero is a claim, not a default.",
+          "$ref": "#/$defs/msat"
+        },
+        "attempts": { "type": "integer", "minimum": 1 },
+        "reason": { "enum": ["no_route", "fee_limit", "timeout", "insufficient_balance", "unknown"] }
+      }
+    },
+    "economicsSnapshot": {
+      "description": "Always derived. Terms are defined in docs/economics.md and mean exactly what that document says.",
+      "type": "object",
+      "required": ["window_seconds", "routing_revenue_msat", "rebalance_cost_msat", "operating_margin_msat"],
+      "additionalProperties": false,
+      "properties": {
+        "window_seconds": { "type": "integer", "minimum": 1 },
+        "channel_id": {
+          "description": "Absent for a node-wide snapshot.",
+          "$ref": "#/$defs/channelId"
+        },
+        "routing_revenue_msat": { "$ref": "#/$defs/msat" },
+        "rebalance_cost_msat": { "$ref": "#/$defs/msat" },
+        "operating_margin_msat": { "type": "integer" },
+        "lifecycle_cost_msat": { "$ref": "#/$defs/msat" },
+        "complete_profitability_msat": { "type": "integer" },
+        "capital_committed_sat": { "$ref": "#/$defs/sat" },
+        "return_on_capital_annualized": { "type": "number" }
+      }
+    }
+  }
+}
