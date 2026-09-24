@@ -44,8 +44,9 @@ factory (the events a visualization is built on), education.
 ## Contributing
 
 Foundry uses fork and pull request. Branch from `main` in your own fork, open a PR against
-`drneski/lightning-foundry`, and describe what you verified. External contributions are
-paused until the license settles; see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+`drneski/lightning-foundry`, and describe what you verified. While the license is
+provisional, every contribution is made under both Apache-2.0 and the Unlicense; see
+[`CONTRIBUTING.md`](CONTRIBUTING.md#licensing-your-contribution).
 
 Changes touching security policy, limits or permissions, dependencies, wallet, macaroon or key
 handling, economic execution with or without a human approving it, the economic definitions,

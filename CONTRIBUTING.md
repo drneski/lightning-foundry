@@ -4,14 +4,24 @@ Read [`AGENTS.md`](AGENTS.md) first — it holds the rules code is judged agains
 covers the practical parts: getting set up, what to run, and what a reviewable change looks
 like.
 
-## Right now: not accepting external contributions
+## Licensing your contribution
 
-The license is provisional pending team review. Accepting outside contributions before it
-settles would make it unchangeable, because relicensing needs the permission of everyone who
-has contributed.
+Foundry is Apache-2.0 for now, and the license is provisional: the team expects to move to the
+Ooga Booga License once it has reviewed the repository — see
+[decision 0004](docs/decisions/0004-provisional-license.md). Changing a license normally needs
+the consent of everyone who has contributed, so until it settles, contributions are made under
+two licenses at once.
 
-Issues, questions and design discussion are welcome in the meantime, and are the most useful
-thing you can offer today. This section comes down when the license does.
+**Every contribution is licensed under both the [Apache License 2.0](LICENSE) and the
+[Unlicense](https://unlicense.org).** Apache-2.0 matches the project today and carries its
+patent grant. The Unlicense, a public-domain dedication, lets the project move to its final
+license without asking anyone again. The pull request template asks you to confirm both, and
+a contribution that cannot be offered on both terms waits until the license settles.
+
+This applies to everyone, maintainers included, and changes only by a later decision record.
+
+There is no code yet, so the most useful contributions today are to the design: issues,
+questions, and pull requests against the docs, schemas and tests.
 
 ## Setup
 
